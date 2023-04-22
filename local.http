@@ -1,0 +1,9 @@
+GET http://localhost:8000/breeds
+Content-Type: application/json
+
+{
+    "uniqueName": "chow_chow",
+    "url": "https://en.wikipedia.org/wiki/Chow_Chow",
+    "creationType": "original",
+    "name": "Chow Chow"
+}
