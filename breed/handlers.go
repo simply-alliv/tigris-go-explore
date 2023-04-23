@@ -4,10 +4,10 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
 	"log"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/gorilla/mux"
 	"github.com/simply-alliv/tigris-go-explore/pkg/shared/params"
@@ -46,7 +46,7 @@ func GetAllBreeds(s *Service) http.HandlerFunc {
 			bqp = params.BreedQueryParams{CreationType: nil}
 		}
 		fmt.Printf("GET /breeds - PaginationQueryParams: %+v - BreedQueryParams: %+v\n", qp, bqp)
-		breeds, _, err := s.GetAllBreeds(r.Context(), qp, bqp)
+		data, _, err := s.GetAllBreeds(r.Context(), qp, bqp)
 		if err != nil {
 			log.Fatalf("Unable to get all breeds: %+v\n", err)
 		}
@@ -55,31 +55,31 @@ func GetAllBreeds(s *Service) http.HandlerFunc {
 		response := Response{
 			Status:  http.StatusOK,
 			Message: "success",
-			Data:    breeds,
+			Data:    data,
 		}
 		writeResponse(w, response)
 	}
 }
 
-func GetSingleBreedByUniqueName(s *Service) http.HandlerFunc {
+func GetSingleBreed(s *Service) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		vars := mux.Vars(r)
-		uniqueName, ok := vars["uniqueName"]
+		id, ok := vars["id"]
 		if !ok {
 			panic(ErrBadRouting)
 		}
 
-		breed, err := s.GetSingleBreedByUniqueName(r.Context(), uniqueName)
+		data, err := s.GetSingleBreed(r.Context(), id)
 		if err != nil {
-			log.Fatalf("Unable to get single breed by unique name: %+v\n", err)
+			log.Fatalf("Unable to get single breed by id (%s): %+v\n", id, err)
 		}
 
-		fmt.Printf("GET /breed/%s\n", uniqueName)
+		fmt.Printf("GET /breed/%s\n", id)
 		// create a new Response struct
 		response := Response{
 			Status:  http.StatusOK,
 			Message: "success",
-			Data:    breed,
+			Data:    data,
 		}
 		writeResponse(w, response)
 	}
@@ -91,18 +91,21 @@ func CreateSingleBreed(s *Service) http.HandlerFunc {
 		if err := json.NewDecoder(r.Body).Decode(&dto); err != nil {
 			panic(err)
 		}
+		// Set default timestamps
+		dto.CreatedAt = time.Now().UTC()
+		dto.UpdatedAt = time.Now().UTC()
 
 		fmt.Printf("POST /breeds - CreateBreedDTO: %+v\n", dto)
-		breed, err := s.CreateSingleBreed(r.Context(), dto)
+		data, err := s.CreateSingleBreed(r.Context(), dto)
 		if err != nil {
-			log.Fatalf("Unable to create single breed: %+v\n", err)
+			log.Fatalf("Unable to create single breed %+v\n", err)
 		}
 
 		// create a new Response struct
 		response := Response{
 			Status:  http.StatusCreated,
 			Message: "success",
-			Data:    breed,
+			Data:    data,
 		}
 		writeResponse(w, response)
 	}
@@ -110,15 +113,56 @@ func CreateSingleBreed(s *Service) http.HandlerFunc {
 
 func UpdateSingleBreed(s *Service) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		fmt.Printf("got /breeds request\n")
-		io.WriteString(w, "This is my website!\n")
+		vars := mux.Vars(r)
+		id, ok := vars["id"]
+		if !ok {
+			panic(ErrBadRouting)
+		}
+
+		var dto UpdateBreed
+		if err := json.NewDecoder(r.Body).Decode(&dto); err != nil {
+			panic(err)
+		}
+		// Set default timestamps
+		dto.UpdatedAt = time.Now().UTC()
+
+		fmt.Printf("PATCH /breeds - UpdateBreedDTO: %+v\n", dto)
+		data, err := s.UpdateSingleBreed(r.Context(), id, dto)
+		if err != nil {
+			log.Fatalf("Unable to create single breed by id (%s): %+v\n", id, err)
+		}
+
+		// create a new Response struct
+		response := Response{
+			Status:  http.StatusOK,
+			Message: "success",
+			Data:    data,
+		}
+		writeResponse(w, response)
 	}
 }
 
 func DeleteeSingleBreed(s *Service) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		fmt.Printf("got /breeds request\n")
-		io.WriteString(w, "This is my website!\n")
+		vars := mux.Vars(r)
+		id, ok := vars["id"]
+		if !ok {
+			panic(ErrBadRouting)
+		}
+
+		fmt.Printf("DELETE /breeds/%s\n", id)
+		err := s.DeleteSingleBreed(r.Context(), id)
+		if err != nil {
+			log.Fatalf("Unable to delete single breed by id (%s): %+v\n", id, err)
+		}
+
+		// create a new Response struct
+		response := Response{
+			Status:  http.StatusOK,
+			Message: "success",
+			Data:    nil,
+		}
+		writeResponse(w, response)
 	}
 }
 

@@ -2,7 +2,6 @@ package breed
 
 import (
 	"context"
-	"time"
 
 	"github.com/simply-alliv/tigris-go-explore/pkg/shared/pagination"
 	"github.com/simply-alliv/tigris-go-explore/pkg/shared/params"
@@ -13,7 +12,6 @@ type IService interface {
 	GetAllBreeds(ctx context.Context, qp params.PaginationQueryParams, bqp params.BreedQueryParams) ([]Breed, *pagination.PaginationData, error)
 	CreateSingleBreed(ctx context.Context, dto CreateBreed) (Breed, error)
 	GetSingleBreed(ctx context.Context, id string) (Breed, error)
-	GetSingleBreedByUniqueName(ctx context.Context, uniqueName string) (Breed, error)
 	UpdateSingleBreed(ctx context.Context, id string, dto UpdateBreed) (Breed, error)
 	DeleteSingleBreed(ctx context.Context, id string) error
 }
@@ -64,10 +62,6 @@ func (s *Service) GetAllBreeds(ctx context.Context, qp params.PaginationQueryPar
 // @Failure 500 {object} JSONResultFailure "Error: Internal Server Error"
 // @Router /breeds [post]
 func (s *Service) CreateSingleBreed(ctx context.Context, dto CreateBreed) (Breed, error) {
-	// Set default timestamps
-	dto.CreatedAt = time.Now()
-	dto.UpdatedAt = time.Now()
-
 	// Create the breed record with all the defaults set
 	data, err := s.r.CreateSingleBreed(ctx, dto)
 	if err != nil {
@@ -102,30 +96,6 @@ func (s *Service) GetSingleBreed(ctx context.Context, id string) (Breed, error) 
 	}
 }
 
-// GetSingleBreedByUniqueName godoc
-// @Summary Get single breed resource by its unique name
-// @Description Get a single breed resource by its unique name
-// @Security Bearer
-// @Tags Breed
-// @Accept json
-// @Produce json
-// @Param uniqueName path string true "Unique name of the breed resource"
-// @Success 200 {object} JSONResultSuccess{data=Breed} "OK"
-// @Failure 401 {object} JSONResultFailure "Error: Unauthorized"
-// @Failure 404 {object} JSONResultFailure "Error: Not Found"
-// @Failure 422 {object} JSONResultFailure "Error: Unprocessable Entity"
-// @Failure 500 {object} JSONResultFailure "Error: Internal Server Error"
-// @Router /breeds/uniquename/{uniqueName} [get]
-func (s *Service) GetSingleBreedByUniqueName(ctx context.Context, uniqueName string) (Breed, error) {
-	data, err := s.r.GetSingleBreedByUniqueName(ctx, uniqueName)
-	if err != nil {
-		// TODO: Handle error
-		return data, err
-	} else {
-		return data, nil
-	}
-}
-
 // UpdateSingleBreed godoc
 // @Summary Update single breed
 // @Description Update a single breed
@@ -142,9 +112,6 @@ func (s *Service) GetSingleBreedByUniqueName(ctx context.Context, uniqueName str
 // @Failure 500 {object} JSONResultFailure "Error: Internal Server Error"
 // @Router /breeds/{id} [patch]
 func (s *Service) UpdateSingleBreed(ctx context.Context, id string, dto UpdateBreed) (Breed, error) {
-	// Set default timestamps
-	dto.UpdatedAt = time.Now()
-
 	c, err := s.r.UpdateSingleBreed(ctx, id, dto)
 	if err != nil {
 		// TODO: Handle error

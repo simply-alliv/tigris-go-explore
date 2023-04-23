@@ -2,9 +2,11 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"net/http"
 	"os"
+	"os/signal"
 	"strconv"
 	"time"
 
@@ -49,27 +51,51 @@ func main() {
 	// instead of starting the server.
 	seedDataStr := os.Getenv("SEED_DATA")
 	seedDataBreedsFile := os.Getenv("SEED_DATA_BREEDS_FILE")
-	if seedDataStr != "" && seedDataBreedsFile != "" {
-		seedData, err := strconv.ParseBool(seedDataStr)
-		if err != nil {
-			panic(err)
-		} else if seedData {
-			seed.SeedData(ctx, seedDataBreedsFile, c)
-		}
+	seedData, err := strconv.ParseBool(seedDataStr)
+	if err != nil {
+		log.Fatal("Unable to parse SEED_DATA string to boolean: ", err)
+	}
+
+	if seedDataStr != "" && seedDataBreedsFile != "" && seedData {
+		seed.SeedData(ctx, seedDataBreedsFile, c)
 	} else {
 		// Initialise the servive
 		r := breed.NewBreedRepository(c)
 		s := breed.NewBreedService(r)
 
-		// Create and start the server
+		// Create the routes
 		router := mux.NewRouter()
 
 		router.HandleFunc("/breeds", breed.GetAllBreeds(s)).Methods("GET")
-		router.HandleFunc("/breeds/{uniqueName}", breed.GetSingleBreedByUniqueName(s)).Methods("GET")
+		router.HandleFunc("/breeds/{id}", breed.GetSingleBreed(s)).Methods("GET")
 		router.HandleFunc("/breeds", breed.CreateSingleBreed(s)).Methods("POST")
-		router.HandleFunc("/breeds/{uniqueName}", breed.UpdateSingleBreed(s)).Methods("PATCH")
-		router.HandleFunc("/breeds/{uniqueName}", breed.DeleteeSingleBreed(s)).Methods("DELETE")
+		router.HandleFunc("/breeds/{id}", breed.UpdateSingleBreed(s)).Methods("PATCH")
+		router.HandleFunc("/breeds/{id}", breed.DeleteeSingleBreed(s)).Methods("DELETE")
 
-		log.Fatal(http.ListenAndServe(":8000", router))
+		// Start the server
+		port := os.Getenv("PORT")
+		if port == "" {
+			port = "8000"
+		}
+		server := &http.Server{Addr: ":" + port, Handler: router}
+
+		go func() {
+			if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+				log.Fatalf("Could not listen on port %s: %v\n", port, err)
+			}
+		}()
+
+		fmt.Printf("Listening on port %s...\n", port)
+
+		// Wait for an interrupt signal to gracefully shutdown the server
+		stop := make(chan os.Signal, 1)
+		signal.Notify(stop, os.Interrupt)
+		<-stop
+
+		fmt.Println("Shutting down the server...")
+		if err := server.Shutdown(context.Background()); err != nil {
+			log.Fatalf("Could not gracefully shutdown the server: %v\n", err)
+		}
+		fmt.Println("Server stopped")
 	}
 }
