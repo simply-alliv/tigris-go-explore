@@ -94,7 +94,7 @@ func main() {
 		<-stop
 
 		fmt.Println("Shutting down the server...")
-		if err := server.Shutdown(context.Background()); err != nil {
+		if err := server.Shutdown(ctx); err != nil {
 			log.Fatalf("Could not gracefully shutdown the server: %v\n", err)
 		}
 		fmt.Println("Server stopped")
