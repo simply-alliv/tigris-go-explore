@@ -22,11 +22,11 @@ var (
 func GetAllBreeds(s *Service) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		page, err := strconv.Atoi(r.URL.Query().Get("page"))
-		if err != nil {
+		if err != nil || page < 1 {
 			page = 1
 		}
 		limit, err := strconv.Atoi(r.URL.Query().Get("limit"))
-		if err != nil {
+		if err != nil || limit < 1 {
 			limit = 20
 		}
 		paginate, err := strconv.ParseBool(r.URL.Query().Get("paginate"))
@@ -46,16 +46,17 @@ func GetAllBreeds(s *Service) http.HandlerFunc {
 			bqp = params.BreedQueryParams{CreationType: nil}
 		}
 		fmt.Printf("GET /breeds - PaginationQueryParams: %+v - BreedQueryParams: %+v\n", qp, bqp)
-		data, _, err := s.GetAllBreeds(r.Context(), qp, bqp)
+		data, metadata, err := s.GetAllBreeds(r.Context(), qp, bqp)
 		if err != nil {
 			log.Fatalf("Unable to get all breeds: %+v\n", err)
 		}
 
 		// create a new Response struct
 		response := Response{
-			Status:  http.StatusOK,
-			Message: "success",
-			Data:    data,
+			Status:   http.StatusOK,
+			Message:  "success",
+			Data:     data,
+			Metadata: metadata,
 		}
 		writeResponse(w, response)
 	}

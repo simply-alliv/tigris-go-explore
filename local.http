@@ -1,4 +1,4 @@
-GET http://localhost:8000/breeds
+GET http://localhost:8000/breeds?limit=10&page=56&paginate=false
 Content-Type: application/json
 
 {

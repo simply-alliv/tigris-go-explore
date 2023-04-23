@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"math"
 
 	"github.com/simply-alliv/tigris-go-explore/pkg/shared/pagination"
 	"github.com/simply-alliv/tigris-go-explore/pkg/shared/params"
@@ -41,12 +42,53 @@ func (r breedRepository) GetAllBreeds(ctx context.Context, qp params.PaginationQ
 		// to be returned when the map/filter is empty.
 		f = filter.Or(filter.Eq("creationType", "original"), filter.Eq("creationType", "custom"))
 	}
-	it, err := r.collection.Read(ctx, f)
+
+	// Add initial pagination data
+	m := pagination.PaginationData{
+		Page:    int64(qp.Page),
+		PerPage: int64(qp.Limit),
+	}
+	c, err := r.collection.Count(ctx, f)
+	if err != nil {
+		return breeds, &m, err
+	}
+	if !qp.Paginate {
+		m.Page = 1
+		m.PerPage = c
+	}
+	options := tigris.ReadOptions{
+		Skip:  (m.Page - 1) * m.PerPage,
+		Limit: m.PerPage,
+	}
+	it, err := r.collection.ReadWithOptions(ctx, f, fields.All, &options)
+	if err != nil {
+		return breeds, &m, err
+	}
+
 	var breed Breed
 	for it.Next(&breed) {
 		breeds = append(breeds, breed)
 	}
-	return breeds, &pagination.PaginationData{}, err
+
+	// Add missing pagination data
+	m.Total = c
+	if !qp.Paginate {
+		m.TotalPage = 1
+	} else {
+		m.TotalPage = int64(math.Ceil(float64(c) / float64(m.PerPage)))
+	}
+	if m.Page <= 1 {
+		m.Next = m.Page + 1
+		m.Next = 0
+	} else if m.Page < m.TotalPage {
+		m.Prev = m.Page - 1
+		m.Next = m.Page + 1
+	} else if m.Page >= m.TotalPage {
+		m.Prev = m.Page - 1
+		m.Next = 0
+	}
+
+	return breeds, &m, err
 }
 
 func (r breedRepository) GetSingleBreed(ctx context.Context, id string) (Breed, error) {
