@@ -66,6 +66,7 @@ func (r breedRepository) GetAllBreeds(ctx context.Context, qp params.PaginationQ
 	if err != nil {
 		return breeds, &m, err
 	}
+	defer it.Close()
 
 	var breed Breed
 	for it.Next(&breed) {
