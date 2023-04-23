@@ -10,6 +10,7 @@ import (
 	"github.com/simply-alliv/tigris-go-explore/pkg/shared/params"
 	"github.com/tigrisdata/tigris-client-go/fields"
 	"github.com/tigrisdata/tigris-client-go/filter"
+	"github.com/tigrisdata/tigris-client-go/sort"
 	"github.com/tigrisdata/tigris-client-go/tigris"
 )
 
@@ -59,6 +60,7 @@ func (r breedRepository) GetAllBreeds(ctx context.Context, qp params.PaginationQ
 	options := tigris.ReadOptions{
 		Skip:  (m.Page - 1) * m.PerPage,
 		Limit: m.PerPage,
+		Sort:  sort.Expr{sort.Ascending("name")},
 	}
 	it, err := r.collection.ReadWithOptions(ctx, f, fields.All, &options)
 	if err != nil {
