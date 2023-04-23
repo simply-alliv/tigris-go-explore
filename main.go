@@ -5,11 +5,13 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strconv"
 	"time"
 
 	"github.com/gorilla/mux"
 	"github.com/joho/godotenv"
 	"github.com/simply-alliv/tigris-go-explore/breed"
+	"github.com/simply-alliv/tigris-go-explore/seed"
 	"github.com/tigrisdata/tigris-client-go/tigris"
 )
 
@@ -36,25 +38,38 @@ func main() {
 		panic(err)
 	}
 
-	// Create or update the collections' schemas
+	// Create or update the collections and their schemas
 	db, err := client.OpenDatabase(ctx, &breed.Breed{})
 	if err != nil {
 		panic(err)
 	}
-
-	// Initialise the servive
 	c := tigris.GetCollection[breed.Breed](db)
-	r := breed.NewBreedRepository(c)
-	s := breed.NewBreedService(r)
 
-	// Create and start the server
-	router := mux.NewRouter()
+	// Seed data if required flags are defined and valid,
+	// instead of starting the server.
+	seedDataStr := os.Getenv("SEED_DATA")
+	seedDataBreedsFile := os.Getenv("SEED_DATA_BREEDS_FILE")
+	if seedDataStr != "" && seedDataBreedsFile != "" {
+		seedData, err := strconv.ParseBool(seedDataStr)
+		if err != nil {
+			panic(err)
+		} else if seedData {
+			seed.SeedData(ctx, seedDataBreedsFile, c)
+		}
+	} else {
+		// Initialise the servive
+		r := breed.NewBreedRepository(c)
+		s := breed.NewBreedService(r)
 
-	router.HandleFunc("/breeds", breed.GetAllBreeds(s)).Methods("GET")
-	router.HandleFunc("/breeds/{uniqueName}", breed.GetSingleBreedByUniqueName(s)).Methods("GET")
-	router.HandleFunc("/breeds", breed.CreateSingleBreed(s)).Methods("POST")
-	router.HandleFunc("/breeds/{uniqueName}", breed.UpdateSingleBreed(s)).Methods("PATCH")
-	router.HandleFunc("/breeds/{uniqueName}", breed.DeleteeSingleBreed(s)).Methods("DELETE")
+		// Create and start the server
+		router := mux.NewRouter()
 
-	log.Fatal(http.ListenAndServe(":8000", router))
+		router.HandleFunc("/breeds", breed.GetAllBreeds(s)).Methods("GET")
+		router.HandleFunc("/breeds/{uniqueName}", breed.GetSingleBreedByUniqueName(s)).Methods("GET")
+		router.HandleFunc("/breeds", breed.CreateSingleBreed(s)).Methods("POST")
+		router.HandleFunc("/breeds/{uniqueName}", breed.UpdateSingleBreed(s)).Methods("PATCH")
+		router.HandleFunc("/breeds/{uniqueName}", breed.DeleteeSingleBreed(s)).Methods("DELETE")
+
+		log.Fatal(http.ListenAndServe(":8000", router))
+	}
 }
