@@ -58,6 +58,7 @@ func main() {
 
 	if seedDataStr != "" && seedDataBreedsFile != "" && seedData {
 		seed.SeedData(ctx, seedDataBreedsFile, c)
+		os.Exit(0)
 	} else {
 		// Initialise the servive
 		r := breed.NewBreedRepository(c)
