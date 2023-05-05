@@ -7,7 +7,7 @@ import (
 // Breed struct
 type Breed struct {
 	UniqeName    string    `json:"uniqueName" tigris:"primaryKey:1,searchIndex" example:"affenpinscher"`
-	Name         string    `json:"name" tigris:"searchIndex,sort" example:"Affenpinscher"`
+	Name         string    `json:"name" tigris:"index" example:"Affenpinscher"`
 	URL          string    `json:"url" example:"https://en.wikipedia.org/wiki/Affenpinscher"`
 	CreationType string    `json:"creationType" tigris:"searchIndex" example:"original"`
 	CreatedAt    time.Time `json:"createdAt" example:"2023-01-05T00:00:00.000Z"`
