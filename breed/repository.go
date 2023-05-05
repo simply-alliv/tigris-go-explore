@@ -32,16 +32,10 @@ func NewBreedRepository(collection *tigris.Collection[Breed]) Repository {
 
 func (r breedRepository) GetAllBreeds(ctx context.Context, qp params.PaginationQueryParams, bqp params.BreedQueryParams) ([]Breed, *pagination.PaginationData, error) {
 	var breeds []Breed = []Breed{}
-	var f filter.Expr
+	f := filter.All
 	creationType := bqp.CreationType
-	if creationType != nil {
+	if creationType != nil && *creationType != "" {
 		f = filter.Eq("creationType", *creationType)
-	} else {
-		// This is only added because if I do not initialise f, it automatically initialises
-		// itself to an empty map (e.g. map[]).
-		// TODO: Ask Tigris engineers if this is a bug because I would expect everything
-		// to be returned when the map/filter is empty.
-		f = filter.Or(filter.Eq("creationType", "original"), filter.Eq("creationType", "custom"))
 	}
 
 	// Add initial pagination data
