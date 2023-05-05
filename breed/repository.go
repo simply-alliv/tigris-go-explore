@@ -60,7 +60,7 @@ func (r breedRepository) GetAllBreeds(ctx context.Context, qp params.PaginationQ
 	options := tigris.ReadOptions{
 		Skip:  (m.Page - 1) * m.PerPage,
 		Limit: m.PerPage,
-		Sort:  sort.Expr{sort.Ascending("name")},
+		Sort:  sort.Ascending("name"),
 	}
 	it, err := r.collection.ReadWithOptions(ctx, f, fields.All, &options)
 	if err != nil {
