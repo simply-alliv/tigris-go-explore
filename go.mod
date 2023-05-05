@@ -5,7 +5,7 @@ go 1.19
 require (
 	github.com/gorilla/mux v1.8.0
 	github.com/joho/godotenv v1.5.1
-	github.com/tigrisdata/tigris-client-go v1.0.0-beta.31
+	github.com/tigrisdata/tigris-client-go v1.0.0-beta.35
 	go.mongodb.org/mongo-driver v1.11.4
 )
 
