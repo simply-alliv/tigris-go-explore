@@ -45,7 +45,9 @@ func GetAllBreeds(s *Service) http.HandlerFunc {
 		} else {
 			bqp = params.BreedQueryParams{CreationType: nil}
 		}
-		fmt.Printf("GET /breeds - PaginationQueryParams: %+v - BreedQueryParams: %+v\n", qp, bqp)
+		defer func(begin time.Time) {
+			fmt.Printf("GET /breeds - PaginationQueryParams: %+v - BreedQueryParams: %+v - Took: %v\n", qp, bqp, time.Since(begin))
+		}(time.Now())
 		data, metadata, err := s.GetAllBreeds(r.Context(), qp, bqp)
 		if err != nil {
 			log.Fatalf("Unable to get all breeds: %+v\n", err)
@@ -75,6 +77,9 @@ func GetSingleBreed(s *Service) http.HandlerFunc {
 			log.Fatalf("Unable to get single breed by id (%s): %+v\n", id, err)
 		}
 
+		defer func(begin time.Time) {
+			fmt.Printf("GET /breed/%s - Took: %v\n", id, time.Since(begin))
+		}(time.Now())
 		fmt.Printf("GET /breed/%s\n", id)
 		// create a new Response struct
 		response := Response{
@@ -96,7 +101,9 @@ func CreateSingleBreed(s *Service) http.HandlerFunc {
 		dto.CreatedAt = time.Now().UTC()
 		dto.UpdatedAt = time.Now().UTC()
 
-		fmt.Printf("POST /breeds - CreateBreedDTO: %+v\n", dto)
+		defer func(begin time.Time) {
+			fmt.Printf("POST /breeds - CreateBreedDTO: %+v - Took: %v\n", dto, time.Since(begin))
+		}(time.Now())
 		data, err := s.CreateSingleBreed(r.Context(), dto)
 		if err != nil {
 			log.Fatalf("Unable to create single breed %+v\n", err)
@@ -127,7 +134,9 @@ func UpdateSingleBreed(s *Service) http.HandlerFunc {
 		// Set default timestamps
 		dto.UpdatedAt = time.Now().UTC()
 
-		fmt.Printf("PATCH /breeds - UpdateBreedDTO: %+v\n", dto)
+		defer func(begin time.Time) {
+			fmt.Printf("PATCH /breeds - UpdateBreedDTO: %+v - Took: %v\n", dto, time.Since(begin))
+		}(time.Now())
 		data, err := s.UpdateSingleBreed(r.Context(), id, dto)
 		if err != nil {
 			log.Fatalf("Unable to create single breed by id (%s): %+v\n", id, err)
@@ -151,7 +160,9 @@ func DeleteeSingleBreed(s *Service) http.HandlerFunc {
 			panic(ErrBadRouting)
 		}
 
-		fmt.Printf("DELETE /breeds/%s\n", id)
+		defer func(begin time.Time) {
+			fmt.Printf("DELETE /breeds/%s - Took: %v\n", id, time.Since(begin))
+		}(time.Now())
 		err := s.DeleteSingleBreed(r.Context(), id)
 		if err != nil {
 			log.Fatalf("Unable to delete single breed by id (%s): %+v\n", id, err)
